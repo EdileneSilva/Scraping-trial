@@ -10,4 +10,60 @@ from itemadapter import ItemAdapter
 
 class FirstscrapingPipeline:
     def process_item(self, item, spider):
+        
+        adapter = ItemAdapter(item)
+        
+        ##Strp all whitespaces from strings
+        field_names =  adapter.field_names()
+        for field_name in field_names:
+            if field_names != 'description':
+                value = adapter.get(field_name)
+                adapter[field_name] = value[0].strip()
+        
+        ## switch o lowercase category and product type
+        lowercase_keys = ['category', 'product_type']
+        for lowercase_key in lowercase_keys:
+            value = adapter.get(lowercase_key)
+            adapter[lowercase_key] = value.lower() 
+                
+                
+        ## convert price to float
+        price_keys = ['price', 'price_excl_tax', 'price_incl_tax', 'tax']
+        for price_key in price_keys:
+            value = adapter.get(price_key)
+            value = value.replace('£','')
+            adapter[price_key] = float(value)
+        
+        ## extract number of books in stock (availability)
+        availability_string =  adapter.get('availability')
+        split_string_array= availability_string.split('(')
+        if len(split_string_array) < 2:
+            adapter['availability']=0
+        else:
+            availability_array = split_string_array[1].split(' ')
+            adapter['availability']= int (availability_array[0])
+            
+        ## converto string to a number in reviews
+        num_reviews_string = adapter.get('num_reviews')
+        adapter['num_reviews'] = int(num_reviews_string)
+        
+        ## star rate into int
+        stars_string = adapter.get('stars')
+        split_stars_array = stars_string.split(' ')
+        stars_text_value = split_stars_array[1].lower()
+        if stars_text_value == "zero":
+            adapter['stars'] = 0
+        if stars_text_value == "one":
+            adapter['stars'] = 1
+        if stars_text_value == "two":
+            adapter['stars'] = 2
+        if stars_text_value == "three":
+            adapter['stars'] = 3
+        if stars_text_value == "four":
+            adapter['stars'] = 4
+        if stars_text_value == "five":
+            adapter['stars'] = 5        
+            
+        
         return item
+    
